@@ -1,0 +1,19 @@
+{
+  "name": "webpagestorage-server",
+  "version": "1.0.0",
+  "description": "Cool storage for webpage you want subscribe",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server/issues"
+  },
+  "homepage": "https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server#readme"
+}
