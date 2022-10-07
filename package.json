@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server/issues"
   },
-  "homepage": "https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server#readme"
+  "homepage": "https://github.com/SKKUCapstoneDesignTeam4/WebpageStorage-Server#readme",
+  "dependencies": {
+    "koa": "^2.13.4"
+  }
 }
