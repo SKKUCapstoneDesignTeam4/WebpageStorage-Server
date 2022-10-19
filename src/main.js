@@ -6,9 +6,6 @@ import { APIServer } from "./APIServer.js";
 
 initLogger()
 
-logger.info("Test logging")
-
-
 const core = new Core();
 const api = new APIServer({
     port: 3000,
