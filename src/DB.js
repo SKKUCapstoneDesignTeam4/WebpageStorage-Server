@@ -41,18 +41,34 @@ class DB
 
     async getUserInfo(name)
     {
+        const res = await this.db.get(SQL`SELECT * FROM user_info WHERE name=${name}`);
+
+        return res;
     }
 
     async insertUserInfo(userInfo)
     {
+        // TODO: name 중복 안 되게
+        await this.db.run(SQL`INSERT INTO user_info (name, password) VALUES (${userInfo.name}, ${userInfo.password})`);
     }
 
     async deleteUserInfo(id)
     {
+        const res = await this.db.run(SQL`DELETE FROM user_info WHERE _id=${id}`);
     }
 
     async updateUserInfo(id, params)
     {
+        let paramString = []
+        if(params.name) paramString.push(`name='${params.name}'`);
+        if(params.password) paramString.push(`password='${params.password}'`);
+
+        if(id && paramString.length > 0) {
+            await this.db.run(
+                SQL`UPDATE user_info SET `
+                .append(paramString.join(","))
+                .append(SQL` WHERE _id=${id}`));
+        }
     }
 
     async getWebSites()

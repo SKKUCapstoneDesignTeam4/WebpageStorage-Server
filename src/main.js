@@ -23,8 +23,12 @@ try
 {
     await DB.init("db.db", true);
 
-    await DB.insertUserInfo({ name: "TestName", password: "TestPassword" });
-    
+    // await DB.insertUserInfo({ name: "TestName", password: "TestPassword" });
+
+    await DB.updateUserInfo(2, { name: "TestName2", tt: 123 });
+    await DB.updateUserInfo(1, { name: "TestName2", tt: 123 });
+
+
     core.initialize();
     core.run();
 
