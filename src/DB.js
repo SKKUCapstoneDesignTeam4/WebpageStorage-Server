@@ -59,11 +59,13 @@ class DB
 
     async updateUserInfo(id, params)
     {
+        if(!id) return;
+
         let paramString = []
         if(params.name) paramString.push(`name='${params.name}'`);
         if(params.password) paramString.push(`password='${params.password}'`);
 
-        if(id && paramString.length > 0) {
+        if(paramString.length > 0) {
             await this.db.run(
                 SQL`UPDATE user_info SET `
                 .append(paramString.join(","))
@@ -73,22 +75,51 @@ class DB
 
     async getWebSites()
     {
+        const res = await this.db.all(SQL`SELECT * FROM web_site_info`);
+
+        return res;
     }
 
     async getWebSite(id)
     {
+        const res = await this.db.get(SQL`SELECT * from web_site_info WHERE _id=${id}`);
+
+        return res;
     }
 
     async insertWebSite(webSiteInfo)
     {
+        const query = SQL`INSERT INTO web_site_info (title, url, crawl_url, css_selector, last_url) `;
+        query.append(SQL`VALUES (${webSiteInfo.title}, ${webSiteInfo.url}), ${webSiteInfo.crawlUrl}, ${webSiteInfo.cssSelector}, ${webSiteInfo.lastUrl}`);
+
+        await this.db.run(query);
     }
 
     async deleteWebSite(id, deleteAllPages = false)
     {
+        await this.db.run(SQL`DELETE FROM web_site_info WHERE _id=${id}`);
+        if(deleteAllPages) {
+            await this.db.run(SQL`DELETE FROM web_page_info WHERE site_id=${id}`);
+        }
     }
 
     async updateWebSite(id, params)
     {
+        if(!id) return;
+
+        let paramString = [];
+        if(params.title) paramString.push(`title=${params.title}`);
+        if(params.url) paramString.push(`url=${params.url}`);
+        if(params.crawlUrl) paramString.push(`crawl_url=${params.crawlUrl}`);
+        if(params.cssSelector) paramString.push(`css_selector=${params.cssSelector}`);
+        if(params.lastUrl) paramString.push(`last_url=${params.lastUrl}`);
+
+        if(paramString.length > 0) {
+            await this.db.run(
+                SQL`UPDATE web_site_info SET `
+                .append(paramString.join(","))
+                .append(SQL` WHERE _id=${id}`));
+        }
     }
 
     async getPages(params)
