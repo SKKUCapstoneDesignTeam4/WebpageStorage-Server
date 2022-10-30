@@ -59,21 +59,27 @@ export class APIServer
         this.initKoa();
     }
 
-    run(core)
+    async run(core)
     {
-        this.core = core;
-        if(this.http2Server != null)
-        {
-            this.http2Server.listen(this.port, function(){
-                logger.info(`Started APIServer. (Protocol: http/2, Port: ${this.port})`);
-            });
-        }
-        else 
-        {
-            this.httpServer.listen(this.port, function(){
-                logger.info(`Started APIServer. (Protocol: http, Port: ${this.port})`);
-            });
-        }
+        return new Promise((resolve, reject) => {
+            this.core = core;
+            if(this.http2Server != null)
+            {
+                this.http2Server.listen(this.port, function(){
+                    logger.info(`Started APIServer. (Protocol: http/2, Port: ${this.port})`);
+
+                    resolve();
+                });
+            }
+            else 
+            {
+                this.httpServer.listen(this.port, function(){
+                    logger.info(`Started APIServer. (Protocol: http, Port: ${this.port})`);
+
+                    resolve();
+                });
+            }
+        });
     }
 
     
@@ -98,18 +104,18 @@ export class APIServer
             } 
             catch (err) 
             {
-                if(err instanceof WPAError) {
-                    ctx.status = err.statusCode;
-                    ctx.body = err.responseMessage;
-                } else {
+                // if(err) { //instanceof WPAError
+                //     ctx.status = err.statusCode;
+                //     ctx.body = err.responseMessage;
+                // } else {
                     ctx.status = 500;
-                }
+                // }
                 ctx.app.emit("error", err, ctx);
             }
         });
 
         this.koaApp.on("error", (err, ctx) => {
-            Log.error(`APIServer: Error in ${ctx.request.method}:${ctx.request.url}\n        ${err.stack}`);
+            logger.error(`APIServer: Error in ${ctx.request.method}:${ctx.request.url}\n        ${err.stack}`);
         });
 
         this.koaApp.use(koaHelmet());
@@ -204,14 +210,12 @@ export class APIServer
     {
         const params = ctx.request.body;
 
-        success = await this.core.insertUserInfo({name: params.id, password: params.password});
-        
+        const success = await this.core.register({name: params.id, password: params.password});
         if(success == false)
         {
             ctx.response.status = 400;
             return;
         }
-        logger.info(success);
         const token = jwt.sign({}, this.jwtSecretKey,
             {
                 expiresIn: "10d",
@@ -230,7 +234,8 @@ export class APIServer
         //     // throw new MissingRequiredParametersError(['password']);
         // }
 
-        if(this.core.checkRegistered({name: params.id, password: params.password}) == false)
+        const success = await this.core.checkRegistered({name: params.id, password: params.password});
+        if(success == false)
         {
             ctx.response.status = 400;
             return;

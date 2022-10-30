@@ -10,7 +10,7 @@ export class Core
         this.watchers = []
     }
     
-    initialize()
+    async initialize()
     {
         //load watchers from DB
         // const infos = await DB.getWebSites();
@@ -38,8 +38,8 @@ export class Core
 
     async checkRegistered(userInfo)
     {
-        dbUserInfo = await DB.getUserInfo(userInfo.name);
-        return dbUserInfo.password == userInfo;
+        const dbUserInfo = await DB.getUserInfo(userInfo.name);
+        return dbUserInfo.password == userInfo.password;
     }
 
     async removeUser(name)

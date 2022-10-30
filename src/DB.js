@@ -42,7 +42,6 @@ class DB
     async getUserInfo(name)
     {
         const res = await this.db.get(SQL`SELECT * FROM user_info WHERE name=${name}`);
-
         return res;
     }
 
