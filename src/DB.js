@@ -88,9 +88,12 @@ class DB
 
     async getWebSites(userId)
     {
-        const res = await this.db.all(SQL`SELECT * FROM web_site_info WHERE owner_user_id=${userId}`);
+        const query = SQL`SELECT * FROM web_site_info`;
+        if(userId) query.append(SQL` WHERE owner_user_id=${userId}`);
 
-        return toCamelCase(res);
+        const res = await this.db.all(query);
+
+        return res.map(function(e){ return toCamelCase(e) });
     }
 
     async getWebSite(id)
@@ -151,7 +154,7 @@ class DB
         }
 
         const res = await this.db.all(query);
-        return toCamelCase(res);
+        return res.map(function(e){ return toCamelCase(e) });
     }
 
     async getPage(id)
