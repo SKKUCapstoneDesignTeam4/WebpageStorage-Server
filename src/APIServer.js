@@ -25,7 +25,6 @@ export class APIServer
 
         this.koaApp = new koa();
 
-        this.password = init.password;
         this.jwtSecretKey = init.jwtSecretKey;
 
         this.enableAuth = false;
@@ -126,10 +125,12 @@ export class APIServer
 
         const authRouter = new koaRouter();
         authRouter.post("/api/auth", this.auth.bind(this));
+        authRouter.post("/api/register", this.register.bind(this));
+
         this.koaApp.use(authRouter.routes());
         this.koaApp.use(authRouter.allowedMethods())
 
-        // this.koaApp.use(koaMount("/page_data", koaStatic("page_data", { maxage: 2592000000 /* 30 days */ })));
+        this.koaApp.use(koaMount("/page_data", koaStatic("page_data", { maxage: 2592000000 /* 30 days */ })));
 
         if(this.enableAuth == true) {
             this.koaApp.use(this.authMiddleware.bind(this));
@@ -137,13 +138,11 @@ export class APIServer
 
         const router = new koaRouter();
 
-        //auth check api 에서?
-        // router.get("/api/auth")
-        // router.get("/api/auth/check", this.checkAuth.bind(this));
-        // router.post("/api/auth/refresh", this.refreshAuth.bind(this));
+        // auth check api 에서?
+        router.get("/api/auth/check", this.checkAuth.bind(this));
+        router.post("/api/auth/refresh", this.refreshAuth.bind(this));
         
         // 계정 등록
-        // router.post("/api/register", )
 
         router.get("/api/pages", this.getPages.bind(this));
         router.get("/api/pages/archieved", this.getArchievedPages.bind(this));
@@ -200,18 +199,39 @@ export class APIServer
         
         await next();
     }
-
     
+    async register(ctx, next)
+    {
+        const params = ctx.request.body;
+
+        success = await this.core.insertUserInfo({name: params.id, password: params.password});
+        
+        if(success == false)
+        {
+            ctx.response.status = 400;
+            return;
+        }
+        logger.info(success);
+        const token = jwt.sign({}, this.jwtSecretKey,
+            {
+                expiresIn: "10d",
+                issuer: "WebPageStorage",
+            });
+
+        ctx.response.status = 200;
+        ctx.body =  { token: token };
+    }
+
     // Routing functions
     async auth(ctx, next)
     {
         const params = ctx.request.body;
+        // if(!params.password) {
+        //     // throw new MissingRequiredParametersError(['password']);
+        // }
 
-        if(!params.password) {
-            // throw new MissingRequiredParametersError(['password']);
-        }
-
-        if(this.password !== params.password) {
+        if(this.core.checkRegistered({name: params.id, password: params.password}) == false)
+        {
             ctx.response.status = 400;
             return;
         }
@@ -228,7 +248,6 @@ export class APIServer
 
     async checkAuth(ctx, next)
     {
-        //check?
         ctx.response.status = 200;
     }
 
