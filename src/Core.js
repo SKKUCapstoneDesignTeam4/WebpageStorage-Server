@@ -65,8 +65,8 @@ export class Core
         try{
             await this.verifySite(info);
 
-            const resId = (await DB.insertWebSite(info))._id;
-            info._id = resId;
+            const resId = (await DB.insertWebSite(info)).id;
+            info.id = resId;
 
             const watcher = new WebSiteWatcher(this, info);
             watcher.start();

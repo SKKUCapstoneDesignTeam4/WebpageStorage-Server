@@ -376,10 +376,10 @@ export class APIServer
 
     async getSites(ctx, next)
     {
-        // const res = await this.core.getWebSites();
+        const res = await this.core.getWebSites();
         
         ctx.status = 200;
-        ctx.body = 'getSites';
+        ctx.body = res;
     }
 
     async addSite(ctx, next)
@@ -411,17 +411,17 @@ export class APIServer
         }
 
         try {
-            // await this.core.insertWebSite({
-            //     _id: "",
-            //     title: params.title,
-            //     url: params.url,
-            //     crawlUrl: params.crawlUrl,
-            //     cssSelector: params.cssSelector,
-            //     category: params.category,
-            //     lastUrl: "",
-            //     checkingCycleSec: params.checkingCycleSec,
-            //     isDisabled: false
-            // });
+            await this.core.addWebSite({
+                id: "",
+                title: params.title,
+                url: params.url,
+                crawlUrl: params.crawlUrl,
+                cssSelector: params.cssSelector,
+                // category: params.category,
+                lastUrl: "",
+                // checkingCycleSec: params.checkingCycleSec,
+                // isDisabled: false
+            });
 
             ctx.status = 204;
         } catch(e) {
@@ -435,13 +435,15 @@ export class APIServer
         const params = ctx.request.body;
         
         try {
-            // await this.core.updateWebSite(ctx.params.id, {
-            //     crawlUrl: params.crawlUrl,
-            //     cssSelector: params.cssSelector,
-            //     category: params.category,
-            //     checkingCycleSec: parseInt(params.checkingCycleSec) || undefined,
-            //     isDisabled: parseBoolean(params.isDisabled)
-            // });
+            await this.core.updateWebSite(ctx.params.id, {
+                title: params.title,
+                url: params.url,
+                crawlUrl: params.crawlUrl,
+                cssSelector: params.cssSelector,
+                // category: params.category,
+                // checkingCycleSec: parseInt(params.checkingCycleSec) || undefined,
+                // isDisabled: parseBoolean(params.isDisabled)
+            });
 
             ctx.status = 204;
         } catch(e) {
@@ -455,7 +457,7 @@ export class APIServer
         const params = ctx.request.body;
         
         try {
-            // await this.core.deleteWebSite(ctx.params.id, (params.deleteAllPages == "true"));
+            await this.core.removeWebSite(ctx.params.id, (params.deleteAllPages == "true"));
 
             ctx.status = 204;
         } catch(e) {

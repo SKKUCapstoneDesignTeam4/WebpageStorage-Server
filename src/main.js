@@ -9,7 +9,7 @@ initLogger()
 
 const core = new Core();
 const api = new APIServer({
-    port: 3000,
+    port: 4000,
     useHttp2: false,
     jwtSecretKey: 1,
     keyPath: null,
