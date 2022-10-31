@@ -107,33 +107,31 @@ export class Core
         }
     }
 
-    async updateWebSite(id, params)
+    async updateWebSite(userId, id, params)
     {
-        try {
-            const res = await DB.updateWebSite(id, params);
+        const res = await DB.updateWebSite(userId, id, params);
 
-            if(res != 0) {
-                const index = this.watchers.findIndex(function(e){
-                    return e.getSiteId() == id;
-                });
+        if(res > 0) {
+            const index = this.watchers.findIndex(function(e){
+                return e.getSiteId() == id;
+            });
 
-                if(index == -1) {
-                    throw Error(`Core: Cannot find deleted web site in the watchers.\n        Site id: ${id}`);
-                }
-                this.watchers[index].stop();
-                this.watchers.splice(index, 1);
-
-                const updatedInfo = await DB.getWebSite(id);
-                const watcher = new WebSiteWatcher({ core:this, info: updatedInfo });
-                watcher.run();
-                this.watchers.push(watcher);
-
-                logger.info(`Core: Updated the web site.\n        id: ${id} / params: ${JSON.stringify(params)}`);
-            } else {
-                throw new SiteNotFoundError(id);
+            if(index == -1) {
+                throw Error(`Core: Cannot find deleted web site in the watchers.\n        Site id: ${id}`);
             }
-        } catch(e) {
-            throw e;
+            this.watchers[index].stop();
+            this.watchers.splice(index, 1);
+
+            const updatedInfo = await DB.getWebSite(userId, id);
+            const watcher = new WebSiteWatcher(this, updatedInfo);
+            watcher.start();
+            this.watchers.push(watcher);
+
+            logger.info(`Core: Updated the web site.\n        id: ${id} / params: ${JSON.stringify(params)}`);
+        } else if(res == 0) {
+            throw new InvalidRequestError(`Site not found (id: ${id})`, 404);
+        } else if(res == -1) {
+            // Do nothing
         }
     }
 
@@ -212,5 +210,4 @@ export class Core
     {
 
     }
-
 }

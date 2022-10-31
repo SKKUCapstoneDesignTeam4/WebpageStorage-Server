@@ -137,11 +137,11 @@ class DB
         if(!id) return;
 
         let paramString = [];
-        if(params.title) paramString.push(`title=${params.title}`);
-        if(params.url) paramString.push(`url=${params.url}`);
-        if(params.crawlUrl) paramString.push(`crawl_url=${params.crawlUrl}`);
-        if(params.cssSelector) paramString.push(`css_selector=${params.cssSelector}`);
-        if(params.lastUrl) paramString.push(`last_url=${params.lastUrl}`);
+        if(params.title) paramString.push(`title="${params.title}"`);
+        if(params.url) paramString.push(`url="${params.url}"`);
+        if(params.crawlUrl) paramString.push(`crawl_url="${params.crawlUrl}"`);
+        if(params.cssSelector) paramString.push(`css_selector="${params.cssSelector}"`);
+        if(params.lastUrl) paramString.push(`last_url="${params.lastUrl}"`);
         if(params.ownerUserId) paramString.push(`owner_user_id=${params.ownerUserId}`);
 
         if(paramString.length > 0) {
@@ -150,7 +150,10 @@ class DB
                              .append(SQL` WHERE id=${id}`);
             if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
 
-            await this.db.run(query);
+            const res = await this.db.run(query);
+            return res.changes;
+        } else {
+            return -1;
         }
     }
 
@@ -207,11 +210,11 @@ class DB
         if(!id) return;
 
         let paramString = [];
-        if(params.title) paramString.push(`title=${params.title}`);
-        if(params.url) paramString.push(`url=${params.url}`);
-        if(params.thumbnailUrl) paramString.push(`thumbnail_url=${params.thumbnailUrl}`);
-        if(params.desc) paramString.push(`desc=${params.desc}`);
-        if(params.time) paramString.push(`time=${params.time.toISOString()}`);
+        if(params.title) paramString.push(`title="${params.title}"`);
+        if(params.url) paramString.push(`url="${params.url}"`);
+        if(params.thumbnailUrl) paramString.push(`thumbnail_url="${params.thumbnailUrl}"`);
+        if(params.desc) paramString.push(`desc="${params.desc}"`);
+        if(params.time) paramString.push(`time="${params.time.toISOString()}"`);
         if(params.isRead) paramString.push(`is_read=${params.isRead}`);
         if(params.siteId) paramString.push(`site_id=${params.siteId}`);
         if(params.ownerUserId) paramString.push(`owner_user_id=${params.ownerUserId}`);
@@ -222,7 +225,10 @@ class DB
                           .append(SQL` WHERE id=${id}`);
             if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
 
-            await this.db.run(query);
+            const res = await this.db.run(query);
+            return res.changes;
+        } else {
+            return -1;
         }
     }
 }

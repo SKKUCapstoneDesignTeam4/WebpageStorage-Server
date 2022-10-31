@@ -256,7 +256,7 @@ export class APIServer
         ctx.body = token;
     }
 
-    // GET: /api/pages
+    // GET: /api/pages (Not implemented)
     async getPages(ctx, next)
     {
         const params = ctx.query;
@@ -277,7 +277,7 @@ export class APIServer
         }
     }
 
-    // DELETE: /api/page/:id
+    // DELETE: /api/page/:id (Not implemented)
     async removePage(ctx, next)
     {
         try {
@@ -290,7 +290,7 @@ export class APIServer
         }
     }
 
-    // PUT: /api/page/read/:id
+    // PUT: /api/page/read/:id (Not implemented)
     async markPageAsRead(ctx, next)
     {
         const params = ctx.request.body;
@@ -349,14 +349,11 @@ export class APIServer
         const params = ctx.request.body;
         
         try {
-            await this.core.updateWebSite(ctx.params.id, {
+            await this.core.updateWebSite(ctx.state.userId, ctx.params.id, {
                 title: params.title,
                 url: params.url,
                 crawlUrl: params.crawlUrl,
-                cssSelector: params.cssSelector,
-                // category: params.category,
-                // checkingCycleSec: parseInt(params.checkingCycleSec) || undefined,
-                // isDisabled: parseBoolean(params.isDisabled)
+                cssSelector: params.cssSelector
             });
 
             ctx.status = 204;
@@ -395,4 +392,6 @@ export class APIServer
             throw new InvalidRequestError(`MissingRequiredParametersError (${notExistedParams.join(", ")})`, 400);
         }
     }
+
+    
 }
