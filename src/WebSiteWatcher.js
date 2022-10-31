@@ -59,13 +59,15 @@ export class WebSiteWatcher
         let res = await axios.get(this.siteInfo.crawlUrl);
 
 
-        const $ = cheerio.load(res);
+        const $ = cheerio.load(res.data);
         const aElement = $(this.siteInfo.cssSelector)[0];
 
         const pageUrl = utility.relToAbsUrl(aElement.attribs.href, this.siteInfo.url);
 
         if(this.siteInfo.lastUrl != pageUrl) {
-            await this._savePage(pageUrl);
+            const res = await this._savePage(pageUrl);
+            // TODO: web stie에 last url update / page DB에 저장
+            console.log(res);
         }
 
 

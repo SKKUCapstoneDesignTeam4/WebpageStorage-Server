@@ -15,6 +15,7 @@ import fs from "fs";
 
 import { logger } from "./Logger.js";
 import { Core } from "./Core.js";
+import { InvalidRequestError } from "./Error.js";
 
 export class APIServer
 {
@@ -99,13 +100,18 @@ export class APIServer
             } 
             catch (err) 
             {
-                ctx.status = 500;
-                ctx.app.emit("error", err, ctx);
+                if(err instanceof InvalidRequestError) {
+                    ctx.status = err.statusCode;
+                    ctx.body = err.responseMessage;
+                } else {
+                    ctx.status = 500;
+                    ctx.app.emit("error", err, ctx);
+                }
             }
         });
 
         this.koaApp.on("error", (err, ctx) => {
-            logger.error(`APIServer: Error in ${ctx.request.method}:${ctx.request.url}\n        ${err.stack}`);
+            logger.error(`APIServer: Error in ${ctx.request.method}:${ctx.request.url}\n        ${err.stack}\n ${err.message}`);
         });
 
         this.koaApp.use(koaHelmet());
@@ -136,20 +142,13 @@ export class APIServer
         router.post("/api/auth/refresh", this.refreshAuth.bind(this));
         
         router.get("/api/pages", this.getPages.bind(this));
-        router.get("/api/pages/archieved", this.getArchievedPages.bind(this));
         router.delete("/api/page/:id", this.removePage.bind(this));
         router.put("/api/page/read/:id", this.markPageAsRead.bind(this));
-        router.post("/api/page/archieved", this.archieveNewPage.bind(this));
-        router.post("/api/page/archieved/:id", this.archievePage.bind(this));
 
         router.get("/api/sites", this.getSites.bind(this));
         router.post("/api/site", this.addSite.bind(this));
         router.put("/api/site/:id", this.updateSite.bind(this));
         router.delete("/api/site/:id", this.removeSite.bind(this));
-
-        router.get("/api/category", this.getCategories.bind(this));
-        router.post("/api/category", this.addCategory.bind(this));
-        router.delete("/api/category", this.removeCategory.bind(this));
 
         this.koaApp.use(router.routes());
         this.koaApp.use(router.allowedMethods());
@@ -193,9 +192,11 @@ export class APIServer
         await next();
     }
     
+    // POST: /api/register
     async register(ctx, next)
     {
         const params = ctx.request.body;
+        this.checkRequiredParams(params, ["id", "password"]);
 
         const newUserId = await this.core.register({name: params.id, password: params.password});
         if(!newUserId)
@@ -213,10 +214,11 @@ export class APIServer
         ctx.body =  { token: token };
     }
 
-    // Routing functions
+    // POST: /api/auth
     async auth(ctx, next)
     {
         const params = ctx.request.body;
+        this.checkRequiredParams(params, ["id", "password"]);
 
         const userId = await this.core.checkRegistered({name: params.id, password: params.password});
         if(!userId)
@@ -235,11 +237,13 @@ export class APIServer
         ctx.body =  { token: token };
     }
 
+    // GET: /api/auth/check
     async checkAuth(ctx, next)
     {
         ctx.response.status = 200;
     }
 
+    // POST: /api/auth/refresh
     async refreshAuth(ctx, next)
     {
         const token = jwt.sign({ userId: ctx.state.userId }, this.jwtSecretKey,
@@ -252,6 +256,7 @@ export class APIServer
         ctx.body = token;
     }
 
+    // GET: /api/pages
     async getPages(ctx, next)
     {
         const params = ctx.query;
@@ -272,27 +277,7 @@ export class APIServer
         }
     }
 
-    // TODO: 위에 것이랑 합치기?
-     async getArchievedPages(ctx, next)
-    {
-        const params = ctx.query;
-
-        const startIndex = parseInt(params.startIndex);
-        if(startIndex < 0) {
-            ctx.response.status = 400;
-            return;
-        }
-
-        try {
-
-            ctx.response.status = 200;
-            ctx.body = 'getArchivedPages';
-        } catch(e) {
-            e.message += `\n        Request parameters: ${JSON.stringify(params)}`;
-            throw e;
-        }
-    }
-
+    // DELETE: /api/page/:id
     async removePage(ctx, next)
     {
         try {
@@ -305,6 +290,7 @@ export class APIServer
         }
     }
 
+    // PUT: /api/page/read/:id
     async markPageAsRead(ctx, next)
     {
         const params = ctx.request.body;
@@ -324,44 +310,7 @@ export class APIServer
         }
     }
 
-    async archieveNewPage(ctx, next)
-    {
-        const params = ctx.request.body;
-
-        let notExistedParams = [];
-
-        if(!params.url) {
-            notExistedParams.push('url');
-        }
-        if(!params.category) {
-            notExistedParams.push('category');
-        }
-        if(notExistedParams.length > 0) {
-            // throw new MissingRequiredParametersError(notExistedParams);
-        }
-
-        try {
-            // const info: WebPageInfo = await getPageInfo(params.url);
-            // info.category = params.category;
-            // info.isRead = true;
-
-            // await this.core.archieveNewPage(info);
-
-            ctx.status = 200;
-            ctx.body = 'archiveNewPage';
-        } catch(e) {
-            e.message += `\n        Request parameters: ${JSON.stringify(params)}`;
-            throw e;
-        }
-    }
-
-    async archievePage(ctx, next)
-    {
-        // await this.core.archievePage(ctx.params.id);
-
-        ctx.status = 204;
-    }
-
+    // GET: /api/sites
     async getSites(ctx, next)
     {
         const res = await this.core.getWebSites();
@@ -370,33 +319,11 @@ export class APIServer
         ctx.body = res;
     }
 
+    // POST: /api/site
     async addSite(ctx, next)
     {
         const params = ctx.request.body;
-
-        let notExistedParams = [];
-        if(!params.title) {
-            notExistedParams.push('title');
-        }
-        if(!params.url) {
-            notExistedParams.push('url');
-        }
-        if(!params.crawlUrl) {
-            notExistedParams.push('crawlUrl');
-        }
-        if(!params.cssSelector) {
-            notExistedParams.push('cssSelector');
-        }
-        if(notExistedParams.length > 0) {
-            throw new MissingRequiredParametersError(notExistedParams);
-        }
-
-        if(!params.category) {
-            params.category = "general";
-        }
-        if(!params.checkingCycleSec) {
-            params.checkingCycleSec = 3600;
-        }
+        this.checkRequiredParams(params, ["title", "url", "crawlUrl", "cssSelector"])
 
         try {
             await this.core.addWebSite({
@@ -405,10 +332,8 @@ export class APIServer
                 url: params.url,
                 crawlUrl: params.crawlUrl,
                 cssSelector: params.cssSelector,
-                // category: params.category,
                 lastUrl: "",
-                // checkingCycleSec: params.checkingCycleSec,
-                // isDisabled: false
+                ownerUserId: ctx.state.userId
             });
 
             ctx.status = 204;
@@ -418,6 +343,7 @@ export class APIServer
         }
     }
 
+    // PUT: /api/site/:id
     async updateSite(ctx, next)
     {
         const params = ctx.request.body;
@@ -440,6 +366,7 @@ export class APIServer
         }
     }
 
+    // DELETE: /api/site/:id
     async removeSite(ctx, next)
     {
         const params = ctx.request.body;
@@ -454,67 +381,18 @@ export class APIServer
         }
     }
 
-    async getCategories(ctx, next)
-    {
-        const params = ctx.query;
+    // ===================
 
-        try {
-            let categoryName = '';
-            let withSub = true;
-
-            if(params.name) {
-                categoryName = params.name;
+    checkRequiredParams(params, requiredParamNames) {
+        let notExistedParams = [];
+        requiredParamNames.forEach(function(name) {
+            if(!(name in params)) {
+                notExistedParams.push(name);
             }
-            if(params.withSub) {
-                const temp = parseBoolean(params.withSub);
-                if(temp != undefined) {
-                    withSub = temp;
-                }
-            }
-            // const r = await this.core.getCategories(categoryName, withSub);
+        });
 
-            ctx.status = 200;
-            ctx.body = 'getCategories';
-        } catch(e) {
-            e.message += `\n        Request parameters: ${JSON.stringify(params)}`;
-            throw e;
+        if(notExistedParams.length > 0) {
+            throw new InvalidRequestError(`MissingRequiredParametersError (${notExistedParams.join(", ")})`, 400);
         }
     }
-
-    async addCategory(ctx, next)
-    {
-        const params = ctx.request.body;
-
-        if(!params.name) {
-            throw new MissingRequiredParametersError(['name']);
-        }
-
-        try {
-            // await this.core.addCategory(params.name);
-
-            ctx.status = 204;
-        } catch(e) {
-            e.message += `\n        Request parameters: ${JSON.stringify(params)}`;
-            throw e;
-        }
-    }
-
-    async removeCategory(ctx, next)
-    {
-        const params = ctx.request.body;
-
-        if(!params.name) {
-            throw new MissingRequiredParametersError(['name']);
-        }
-
-        try {
-            // await this.core.deleteCategory(params.name);
-
-            ctx.status = 204;
-        } catch(e) {
-            e.message += `\n        Request parameters: ${JSON.stringify(params)}`;
-            throw e;
-        }
-    }
-
 }

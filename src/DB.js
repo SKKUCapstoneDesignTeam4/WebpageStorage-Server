@@ -107,11 +107,11 @@ class DB
     async insertWebSite(webSiteInfo)
     {
         const query = SQL`INSERT INTO web_site_info (title, url, crawl_url, css_selector, last_url, owner_user_id) `;
-        query.append(SQL`VALUES (${webSiteInfo.title}, ${webSiteInfo.url}), ${webSiteInfo.crawlUrl}, ${webSiteInfo.cssSelector},
+        query.append(SQL`VALUES (${webSiteInfo.title}, ${webSiteInfo.url}, ${webSiteInfo.crawlUrl}, ${webSiteInfo.cssSelector},
                                  ${webSiteInfo.lastUrl}, ${webSiteInfo.ownerUserId})`);
 
         const res = await this.db.run(query);
-        return res;
+        return res.lastID;
     }
 
     async deleteWebSite(id, deleteAllPages = false)
@@ -172,7 +172,7 @@ class DB
     async insertPage(webPageInfo)
     {
         const query = SQL`INSERT INTO web_page_info (title, url, thumbnail_url, desc, time, is_read, site_id, owner_user_id) `;
-        query.append(SQL`VALUES (${webPageInfo.title}, ${webPageInfo.url}), ${webPageInfo.thumbnailUrl}, ${webPageInfo.desc},
+        query.append(SQL`VALUES (${webPageInfo.title}, ${webPageInfo.url}, ${webPageInfo.thumbnailUrl}, ${webPageInfo.desc},
                                  ${webPageInfo.time.toISOString()}, ${webPageInfo.isResd}, ${webPageInfo.site_id}, ${webPageInfo.owner_user_id})`);
 
         const res = await this.db.run(query);

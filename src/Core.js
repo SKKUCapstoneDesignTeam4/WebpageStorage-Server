@@ -1,6 +1,10 @@
+import axios from "axios";
+import * as cheerio from "cheerio";
+
 import { DB } from "./DB.js";
 import { logger } from "./Logger.js";
 import { WebSiteWatcher } from "./WebSiteWatcher.js";
+import { relToAbsUrl } from "./Utility.js";
 
 export class Core
 {
@@ -64,7 +68,7 @@ export class Core
         try{
             await this.verifySite(info);
 
-            const resId = (await DB.insertWebSite(info)).id;
+            const resId = await DB.insertWebSite(info);
             info.id = resId;
 
             const watcher = new WebSiteWatcher(this, info);
@@ -159,40 +163,6 @@ export class Core
 
         logger.info(`Core: Added a new page. (Site id: ${info.siteId})\n        id: ${info._id} / title: ${info.title}`);
     }
-    async archievePage(id)
-    {
-        const info = await DB.getPage(id);
-        if(info == undefined) {
-            throw new PageNotFoundError(id);
-        }
-
-        info.isRead = true;
-
-        const newInfoId = (await DB.archievePage(info))._id;
-
-        if(info.imageUrl != "") {
-            const fileName = info.imageUrl.split('/').pop();
-
-            let newPath = `page_data/${newInfoId}/`;
-            if(fs.existsSync("page_data") == false) {
-                await fs.promises.mkdir("page_data");
-            }
-            if(fs.existsSync(newPath) == false) {
-                await fs.promises.mkdir(newPath);
-            }
-
-            newPath += fileName;
-
-            await Promise.all([
-                fs.promises.copyFile(info.imageUrl, newPath),
-                DB.updatePage(newInfoId, { imageUrl: newPath })
-            ]);
-        } else {
-            await DB.updatePage(newInfoId, { imageUrl: "" });
-        }
-
-        logger.info(`Core: Archieved the page.\n        id: ${info._id} / title: ${info.title}`);
-    }
 
     async removePage(id, withData)
     {
@@ -213,25 +183,6 @@ export class Core
         }
     }
 
-    async archieveNewPage(info)
-    {
-        const dbRes = await DB.archievePage(info);
-        info._id = dbRes._id;
-
-        let newImagePath;
-        try {
-            newImagePath = await this.saveImage(info._id, info.imageUrl);
-        } catch (e) {
-            console.log(e);
-            newImagePath = "";
-        }
-
-        await DB.updatePage(info._id, { imageUrl: newImagePath });
-
-        logger.info(`Core: Archieved a new page.\n        id: ${info._id} / title: ${info.title}`);
-    }
-
-
     async readPage(id, setUnread)
     {
         if(setUnread == false) {
@@ -247,38 +198,16 @@ export class Core
         }
     }
 
-    async getCategories(name, withSub)
-    {
-        if(withSub == false) {
-            const res = await DB.getCategory(name);
-            if(res == null) {
-                return []
-            } else {
-                return [res];
-            }
-        } else {
-            return await DB.getCategoriesWithSub(name);
-        }
-    }
-
-    async addCategory(name)
-    {
-        await DB.insertCategory(name);
-        Log.info(`Core: Inserted a category.\n        name: ${name}`);
-    }
-
-    async removeCategory(name)
-    {
-        await DB.deleteCategory(name);
-
-        logger.info(`Core: Deleted a category.\n        name: ${name}`);
-    }
-
     //==============================================
 
-    async verifySite()
+    async verifySite(webSiteInfo)
     {
+        let res = await axios.get(webSiteInfo.crawlUrl);
 
+        const $ = cheerio.load(res.data);
+        const aElement = $(webSiteInfo.cssSelector)[0];
+
+        const pageUrl = relToAbsUrl(aElement.attribs.href, webSiteInfo.url);
     }
 
     async saveThumbnail()
