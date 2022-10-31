@@ -39,6 +39,11 @@ export class WebSiteWatcher
         this.intervalId = setTimeout(this._runInternal.bind(this), nextTimeSec * 1000);
     }
 
+    getSiteId()
+    {
+        return this.siteInfo.id;
+    }
+
     _runInternal()
     {
         if(this.isBusy) return;

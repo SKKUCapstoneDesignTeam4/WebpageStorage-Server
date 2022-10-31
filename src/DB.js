@@ -69,6 +69,7 @@ class DB
     async deleteUserInfo(id)
     {
         const res = await this.db.run(SQL`DELETE FROM user_info WHERE id=${id}`);
+        return res.changes;
     }
 
     async updateUserInfo(id, params)
@@ -90,16 +91,18 @@ class DB
     async getWebSites(userId)
     {
         const query = SQL`SELECT * FROM web_site_info`;
-        if(userId) query.append(SQL` WHERE owner_user_id=${userId}`);
+        if(userId != -1) query.append(SQL` WHERE owner_user_id=${userId}`);
 
         const res = await this.db.all(query);
 
         return res.map(function(e){ return toCamelCase(e) });
     }
 
-    async getWebSite(id)
+    async getWebSite(userId, id)
     {
-        const res = await this.db.get(SQL`SELECT * from web_site_info WHERE id=${id}`);
+        const query = SQL`SELECT * from web_site_info WHERE id=${id}`;
+        if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+        const res = await this.db.get(query);
 
         return toCamelCase(res);
     }
@@ -114,15 +117,22 @@ class DB
         return res.lastID;
     }
 
-    async deleteWebSite(id, deleteAllPages = false)
+    async deleteWebSite(userId, id, deleteAllPages = false)
     {
-        await this.db.run(SQL`DELETE FROM web_site_info WHERE id=${id}`);
+        const query = SQL`DELETE FROM web_site_info WHERE id=${id}`;
+        if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+        const res = await this.db.run(query);
+
         if(deleteAllPages) {
-            await this.db.run(SQL`DELETE FROM web_page_info WHERE site_id=${id}`);
+            const query2 = SQL`DELETE FROM web_page_info WHERE site_id=${id}`;
+            if(userId != -1) query2.append(SQL` AND owner_user_id=${userId}`);
+            await this.db.run(query2);
         }
+
+        return res.changes;
     }
 
-    async updateWebSite(id, params)
+    async updateWebSite(userId, id, params)
     {
         if(!id) return;
 
@@ -135,17 +145,19 @@ class DB
         if(params.ownerUserId) paramString.push(`owner_user_id=${params.ownerUserId}`);
 
         if(paramString.length > 0) {
-            await this.db.run(
-                SQL`UPDATE web_site_info SET `
-                .append(paramString.join(","))
-                .append(SQL` WHERE id=${id}`));
+            const query = SQL`UPDATE web_site_info SET `
+                             .append(paramString.join(","))
+                             .append(SQL` WHERE id=${id}`);
+            if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+
+            await this.db.run(query);
         }
     }
 
     // Pages만의 특별한 parmas
     //   * afterId
     //   * count
-    async getPages(params, userId)
+    async getPages(userId, params)
     {
         const query = SQL`SELECT * FROM web_page_info WHERE owner_user_id=${userId}`;
         if(params.afterId) {
@@ -159,9 +171,11 @@ class DB
         return res.map(function(e){ return toCamelCase(e) });
     }
 
-    async getPage(id)
+    async getPage(userId, id)
     {
-        const res = await this.db.get(SQL`SELECT * from web_page_info WHERE id=${id}`);
+        const query = SQL`SELECT * from web_page_info WHERE id=${id}`;
+        if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+        const res = await this.db.get(query);
 
         // time만 Date타입으로 바꿔줌
         res.time = Date.parse(res.time);
@@ -179,12 +193,16 @@ class DB
         return res.lastID;
     }
 
-    async deletePage(id)
+    async deletePage(userId, id)
     {
-        await this.db.run(SQL`DELETE FROM web_page_info WHERE id=${id}`);
+        const query = SQL`DELETE FROM web_page_info WHERE id=${id}`;
+        if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+
+        const res = await this.db.run(query);
+        return res.changes;
     }
 
-    async updatePage(id, params)
+    async updatePage(userId, id, params)
     {
         if(!id) return;
 
@@ -199,10 +217,12 @@ class DB
         if(params.ownerUserId) paramString.push(`owner_user_id=${params.ownerUserId}`);
 
         if(paramString.length > 0) {
-            await this.db.run(
-                SQL`UPDATE web_page_info SET `
-                .append(paramString.join(","))
-                .append(SQL` WHERE id=${id}`));
+            const query = SQL`UPDATE web_page_info SET `
+                          .append(paramString.join(","))
+                          .append(SQL` WHERE id=${id}`);
+            if(userId != -1) query.append(SQL` AND owner_user_id=${userId}`);
+
+            await this.db.run(query);
         }
     }
 }

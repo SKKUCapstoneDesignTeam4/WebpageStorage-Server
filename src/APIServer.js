@@ -372,7 +372,7 @@ export class APIServer
         const params = ctx.request.body;
         
         try {
-            await this.core.removeWebSite(ctx.params.id, (params.deleteAllPages == "true"));
+            await this.core.removeWebSite(ctx.state.userId, ctx.params.id, (params.deleteAllPages == "true"));
 
             ctx.status = 204;
         } catch(e) {

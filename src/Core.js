@@ -5,6 +5,7 @@ import { DB } from "./DB.js";
 import { logger } from "./Logger.js";
 import { WebSiteWatcher } from "./WebSiteWatcher.js";
 import { relToAbsUrl } from "./Utility.js";
+import { InvalidRequestError } from "./Error.js";
 
 export class Core
 {
@@ -17,7 +18,7 @@ export class Core
     async initialize()
     {
         // load watchers from DB
-        const infos = await DB.getWebSites(undefined);
+        const infos = await DB.getWebSites(-1);
 
         infos.forEach((info) => {
             this.watchers.push(new WebSiteWatcher(this, info));
@@ -85,28 +86,24 @@ export class Core
         }
     }
 
-    async removeWebSite(id, deleteAllPages)
+    async removeWebSite(userId, id, deleteAllPages)
     {
-        try {
-            const res = await DB.deleteWebSite(id, deleteAllPages);
+        const deleteNum = await DB.deleteWebSite(userId, id, deleteAllPages);
 
-            if(res != 0) {
-                const index = this.watchers.findIndex(function(e){
-                    return e.getSiteId() == id;
-                });
+        if(deleteNum != 0) {
+            const index = this.watchers.findIndex(function(e){
+                return e.getSiteId() == id;
+            });
 
-                if(index == -1) {
-                    throw Error(`Core: Cannot find deleted web site in the watchers.\n        Site id: ${id}`);
-                }
-                this.watchers[index].stop();
-                this.watchers.splice(index, 1);
-
-                logger.info(`Core: Deleted the web site.\n        id: ${id}`);
-            } else {
-                throw new SiteNotFoundError(id);
+            if(index == -1) {
+                throw Error(`Core: Cannot find deleted web site in the watchers.\n        Site id: ${id}`);
             }
-        } catch(e) {
-            throw e;
+            this.watchers[index].stop();
+            this.watchers.splice(index, 1);
+
+            logger.info(`Core: Deleted the web site.\n        id: ${id}`);
+        } else {
+            throw new InvalidRequestError(`Site not found (id: ${id})`, 404);
         }
     }
 
