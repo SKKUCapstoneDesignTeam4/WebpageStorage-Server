@@ -41,11 +41,11 @@ export class WebSiteWatcher
         this._checkNewPage().then(() => {
             this.failedNum = 0;
         }).catch((e) => {
-            Log.error(`WebSiteWatcher: Failed to check a new page. (${e.name}: ${e.message})\n        Site id: ${this.siteInfo._id}(${this.siteInfo.title})\n        ${e.stack}`);
+            Log.error(`WebSiteWatcher: Failed to check a new page. (${e.name}: ${e.message})\n        Site id: ${this.siteInfo.id}(${this.siteInfo.title})\n        ${e.stack}`);
 
             this.failedNum += 1;
             if(this.failedNum >= 10) {
-                Log.error(`WebSiteWatcher: Failed to check a new page 10 times continuously, so disable this web site.\n        Site id: ${this.siteInfo._id}(${this.siteInfo.title})`);
+                Log.error(`WebSiteWatcher: Failed to check a new page 10 times continuously, so disable this web site.\n        Site id: ${this.siteInfo.id}(${this.siteInfo.title})`);
                 Log.error('WebSiteWatcher: Check the logs for fixing errors and enable it manually, or delete it.');
                 // this.core.updateWebSite(this.siteInfo._id, { isDisabled: true });
             }
@@ -116,7 +116,7 @@ export class WebSiteWatcher
         }
 
         const page = {
-            _id: "",
+            id: "",
             siteId: "",
             title: title,
             url: url,

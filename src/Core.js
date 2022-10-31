@@ -2,7 +2,6 @@ import { DB } from "./DB.js";
 import { logger } from "./Logger.js";
 import { WebSiteWatcher } from "./WebSiteWatcher.js";
 
-
 export class Core
 {
     constructor()
@@ -12,12 +11,12 @@ export class Core
     
     async initialize()
     {
-        //load watchers from DB
-        // const infos = await DB.getWebSites();
+        // load watchers from DB
+        const infos = await DB.getWebSites(undefined);
 
-        // infos.forEach(function(info){
-        //     this.watchers.push(new WebSiteWatcher({core: this, info: info}));
-        // });
+        infos.forEach(function(info){
+            this.watchers.push(new WebSiteWatcher({core: this, info: info}));
+        });
     }
 
     run()
@@ -30,16 +29,16 @@ export class Core
     }
 
     // Register 
-
     async register(userInfo)
     {
-        await DB.insertUserInfo(userInfo);
+        return await DB.insertUserInfo(userInfo);
     }
 
     async checkRegistered(userInfo)
     {
         const dbUserInfo = await DB.getUserInfo(userInfo.name);
-        return dbUserInfo.password == userInfo.password;
+        if(userInfo.password === dbUserInfo.password) return dbUserInfo.id;
+        else return undefined;
     }
 
     async removeUser(name)
@@ -72,7 +71,7 @@ export class Core
             watcher.start();
             this.watchers.push(watcher);
 
-            logger.info(`Core: Inserted a web site.\n        id: ${info._id} / title: ${info.title} / url: ${info.url}`);
+            logger.info(`Core: Inserted a web site.\n        id: ${info.id} / title: ${info.title} / url: ${info.url}`);
 
             watcher.checkImmediately();
         }

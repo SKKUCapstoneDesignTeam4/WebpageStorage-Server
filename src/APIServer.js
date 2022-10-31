@@ -18,7 +18,7 @@ import { Core } from "./Core.js";
 
 export class APIServer
 {
-    // port, useHttp2, keyPath, certPath, password, jwtSecretKey, enableAuth
+    // port, useHttp2, keyPath, certPath, password, jwtSecretKey
     constructor(init)
     {
         this.port = 80;
@@ -26,8 +26,6 @@ export class APIServer
         this.koaApp = new koa();
 
         this.jwtSecretKey = init.jwtSecretKey;
-
-        this.enableAuth = false;
 
         this.httpServer = null;
         this.http2Server = null;
@@ -37,9 +35,6 @@ export class APIServer
         else if(init.useHttp2)
             this.port = 443;
 
-        if(init.enableAuth) 
-            this.enableAuth = init.enableAuth;
-            
         if(init.useHttp2)
         {
             const options = {
@@ -65,7 +60,7 @@ export class APIServer
             this.core = core;
             if(this.http2Server != null)
             {
-                this.http2Server.listen(this.port, function(){
+                this.http2Server.listen(this.port, () => {
                     logger.info(`Started APIServer. (Protocol: http/2, Port: ${this.port})`);
 
                     resolve();
@@ -73,7 +68,7 @@ export class APIServer
             }
             else 
             {
-                this.httpServer.listen(this.port, function(){
+                this.httpServer.listen(this.port, () => {
                     logger.info(`Started APIServer. (Protocol: http, Port: ${this.port})`);
 
                     resolve();
@@ -104,12 +99,7 @@ export class APIServer
             } 
             catch (err) 
             {
-                // if(err) { //instanceof WPAError
-                //     ctx.status = err.statusCode;
-                //     ctx.body = err.responseMessage;
-                // } else {
-                    ctx.status = 500;
-                // }
+                ctx.status = 500;
                 ctx.app.emit("error", err, ctx);
             }
         });
@@ -138,18 +128,13 @@ export class APIServer
 
         this.koaApp.use(koaMount("/page_data", koaStatic("page_data", { maxage: 2592000000 /* 30 days */ })));
 
-        if(this.enableAuth == true) {
-            this.koaApp.use(this.authMiddleware.bind(this));
-        }
+        this.koaApp.use(this.authMiddleware.bind(this));
 
         const router = new koaRouter();
 
-        // auth check api 에서?
         router.get("/api/auth/check", this.checkAuth.bind(this));
         router.post("/api/auth/refresh", this.refreshAuth.bind(this));
         
-        // 계정 등록
-
         router.get("/api/pages", this.getPages.bind(this));
         router.get("/api/pages/archieved", this.getArchievedPages.bind(this));
         router.delete("/api/page/:id", this.removePage.bind(this));
@@ -182,7 +167,9 @@ export class APIServer
 
         try 
         {
-            jwt.verify(token, this.jwtSecretKey);
+            const payload = jwt.verify(token, this.jwtSecretKey);
+            // Save user id in context.state
+            ctx.state.userId = payload.userId;
         } 
         catch(e) 
         {
@@ -210,13 +197,13 @@ export class APIServer
     {
         const params = ctx.request.body;
 
-        const success = await this.core.register({name: params.id, password: params.password});
-        if(success == false)
+        const newUserId = await this.core.register({name: params.id, password: params.password});
+        if(!newUserId)
         {
             ctx.response.status = 400;
             return;
         }
-        const token = jwt.sign({}, this.jwtSecretKey,
+        const token = jwt.sign({ userId: newUserId }, this.jwtSecretKey,
             {
                 expiresIn: "10d",
                 issuer: "WebPageStorage",
@@ -230,18 +217,15 @@ export class APIServer
     async auth(ctx, next)
     {
         const params = ctx.request.body;
-        // if(!params.password) {
-        //     // throw new MissingRequiredParametersError(['password']);
-        // }
 
-        const success = await this.core.checkRegistered({name: params.id, password: params.password});
-        if(success == false)
+        const userId = await this.core.checkRegistered({name: params.id, password: params.password});
+        if(!userId)
         {
             ctx.response.status = 400;
             return;
         }
 
-        const token = jwt.sign({}, this.jwtSecretKey,
+        const token = jwt.sign({ userId: userId }, this.jwtSecretKey,
             {
                 expiresIn: "10d",
                 issuer: "WebPageStorage",
@@ -258,7 +242,7 @@ export class APIServer
 
     async refreshAuth(ctx, next)
     {
-        const token = jwt.sign({}, this.jwtSecretKey,
+        const token = jwt.sign({ userId: ctx.state.userId }, this.jwtSecretKey,
             {
                 expiresIn: "10d",
                 issuer: "WebPageStorage",
@@ -280,7 +264,6 @@ export class APIServer
 
         try 
         {
-
             ctx.response.status = 200;
             ctx.body = 'getPages';
         } catch(e) {

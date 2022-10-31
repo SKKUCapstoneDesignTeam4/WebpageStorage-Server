@@ -13,8 +13,7 @@ const api = new APIServer({
     useHttp2: false,
     jwtSecretKey: "asdfasdf",
     keyPath: null,
-    certPath: null,
-    enableAuth: true
+    certPath: null
 });
 
 
@@ -23,11 +22,12 @@ const run = async function(){
     {
         await DB.init("db.db", true);
 
-        // await DB.updateUserInfo(1, { name: "TestName2", tt: 123 });
+        // await DB.insertUserInfo({ name:"T3", password:"P3" });
+        // await DB.deleteUserInfo(2);
 
 
         await core.initialize();
-        core.run();
+        await core.run();
 
         await api.run(core);
 

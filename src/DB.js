@@ -10,10 +10,10 @@ function toCamelCase(dbRes)
 
     let res = {};
     for(let [k, v] of Object.entries(dbRes)) {
-        k = str.replace(/(_[A-Za-z])/g, function(word, index) {
+        k = k.replace(/(_[A-Za-z])/g, function(word, index) {
             return word[1].toUpperCase();
         });
-        res.k = v;
+        res[k] = v;
     }
     return res;
 }
@@ -62,7 +62,8 @@ class DB
     async insertUserInfo(userInfo)
     {
         // TODO: name 중복 안 되게
-        await this.db.run(SQL`INSERT INTO user_info (name, password) VALUES (${userInfo.name}, ${userInfo.password})`);
+        const res = await this.db.run(SQL`INSERT INTO user_info (name, password) VALUES (${userInfo.name}, ${userInfo.password})`);
+        return res.lastID;
     }
 
     async deleteUserInfo(id)
@@ -109,7 +110,8 @@ class DB
         query.append(SQL`VALUES (${webSiteInfo.title}, ${webSiteInfo.url}), ${webSiteInfo.crawlUrl}, ${webSiteInfo.cssSelector},
                                  ${webSiteInfo.lastUrl}, ${webSiteInfo.ownerUserId})`);
 
-        await this.db.run(query);
+        const res = await this.db.run(query);
+        return res;
     }
 
     async deleteWebSite(id, deleteAllPages = false)
@@ -173,7 +175,8 @@ class DB
         query.append(SQL`VALUES (${webPageInfo.title}, ${webPageInfo.url}), ${webPageInfo.thumbnailUrl}, ${webPageInfo.desc},
                                  ${webPageInfo.time.toISOString()}, ${webPageInfo.isResd}, ${webPageInfo.site_id}, ${webPageInfo.owner_user_id})`);
 
-        await this.db.run(query);
+        const res = await this.db.run(query);
+        return res.lastID;
     }
 
     async deletePage(id)
