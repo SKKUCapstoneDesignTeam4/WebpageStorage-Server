@@ -313,7 +313,7 @@ export class APIServer
     // GET: /api/sites
     async getSites(ctx, next)
     {
-        const res = await this.core.getWebSites();
+        const res = await this.core.getWebSites(ctx.state.userId);
         
         ctx.status = 200;
         ctx.body = res;

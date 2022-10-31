@@ -58,9 +58,9 @@ export class Core
 
     // Website watcher interactions ==================
 
-    async getWebSites()
+    async getWebSites(userId)
     {
-        return await DB.getWebSites();
+        return await DB.getWebSites(userId);
     }
 
 

@@ -71,10 +71,10 @@ export class WebSiteWatcher
 
         if(this.siteInfo.lastUrl != pageUrl) {
             const res = await this._savePage(pageUrl);
+            res.siteId = this.siteInfo.id;
             // TODO: web stie에 last url update / page DB에 저장
             console.log(res);
         }
-
 
         this.isBusy = false;
     }
