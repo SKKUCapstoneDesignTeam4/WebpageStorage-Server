@@ -8,9 +8,10 @@ import { relToAbsUrl } from "./Utility.js";
 
 export class Core
 {
+    watchers = []
+
     constructor()
     {
-        this.watchers = []
     }
     
     async initialize()
@@ -18,8 +19,8 @@ export class Core
         // load watchers from DB
         const infos = await DB.getWebSites(undefined);
 
-        infos.forEach(function(info){
-            this.watchers.push(new WebSiteWatcher({core: this, info: info}));
+        infos.forEach((info) => {
+            this.watchers.push(new WebSiteWatcher(this, info));
         });
     }
 

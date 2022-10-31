@@ -27,7 +27,7 @@ const run = async function(){
 
 
         await core.initialize();
-        await core.run();
+        core.run();
 
         await api.run(core);
 
